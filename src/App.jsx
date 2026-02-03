@@ -119,26 +119,76 @@ function App() {
 
     const englishPrompt = translatePrompt(prompt);
 
+    // Configuración de estrategias de generación
     const enhancedPrompt = `${englishPrompt}, coloring book page, high resolution, fine black and white line art, clean lines, sharp details, white background, vector style, cute, for kids, no color, no shading, no grayscale, no realism, no overlapping lines`;
     const encodedPrompt = encodeURIComponent(enhancedPrompt);
     const randomSeed = Math.floor(Math.random() * 1000);
+    const API_KEY = "pk_cMYlf55YuDABkZZY";
 
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
-    // Usamos un proxy para evitar bloqueos por CORS/Hotlinking en localhost
-    const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(imageUrl)}`;
+    // Listado de estrategias (Priorizamos DIRECTO con API key porque es lo más fiable)
+    const strategies = [
+      {
+        name: "Pollinations Direct (con API Key)",
+        id: "pollinations-direct",
+        url: `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=1024&height=1024&nologo=true&key=${API_KEY}`
+      },
+      {
+        name: "Pollinations Optimized (wsrv.nl)",
+        id: "pollinations-wsrv",
+        url: `https://wsrv.nl/?url=${encodeURIComponent(`https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=1024&height=1024&nologo=true&key=${API_KEY}`)}&output=jpg`
+      },
+      {
+        name: "Hercai Backup",
+        id: "hercai",
+        isAsync: true,
+        fetchUrl: `https://corsproxy.io/?${encodeURIComponent(`https://hercai.onrender.com/v3/text2image?prompt=${encodedPrompt}`)}`
+      }
+    ];
 
-    try {
-      // Simular un pequeño tiempo de "magia" para la UX
-      await new Promise(resolve => setTimeout(resolve, 2000));
+    let success = false;
 
-      setGeneratedImage(proxyUrl);
-      addToHistory(proxyUrl, prompt);
-    } catch (error) {
-      console.error("Error generating image:", error);
-      alert("¡Vaya! Hubo un problema. Inténtalo de nuevo. 🎨");
-    } finally {
-      setIsLoading(false);
+    for (const strategy of strategies) {
+      if (success) break;
+      console.log(`Intentando estrategia: ${strategy.name}`);
+
+      try {
+        let imageUrlToUse = strategy.url;
+
+        if (strategy.isAsync) {
+          const response = await fetch(strategy.fetchUrl);
+          if (!response.ok) throw new Error("Async fetch failed");
+          const data = await response.json();
+          if (data && data.url) {
+            imageUrlToUse = data.url;
+          } else {
+            throw new Error("No URL in response");
+          }
+        }
+
+        await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.referrerPolicy = "no-referrer";
+          img.onload = () => resolve(imageUrlToUse);
+          img.onerror = () => reject(new Error(`Failed to load image from ${imageUrlToUse}`));
+          img.src = imageUrlToUse;
+          setTimeout(() => reject(new Error("Timeout loading image")), 20000);
+        });
+
+        setGeneratedImage(imageUrlToUse);
+        addToHistory(imageUrlToUse, prompt);
+        success = true;
+        console.log(`Éxito con estrategia: ${strategy.name}`);
+
+      } catch (error) {
+        console.warn(`Fallo en estrategia ${strategy.name}:`, error.message);
+      }
     }
+
+    if (!success) {
+      alert("¡Vaya! Los duendes de Internet están dormidos hoy. Inténtalo de nuevo en unos minutos. 🎨");
+    }
+
+    setIsLoading(false);
   };
 
   return (
