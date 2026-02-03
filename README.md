@@ -1,16 +1,58 @@
-# React + Vite
+# 🎨 Colorea AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Colorea AI** es una plataforma mágica diseñada para que los más pequeños (y los no tan pequeños) puedan dar vida a su imaginación. Utilizando inteligencia artificial, los usuarios pueden generar dibujos para colorear personalizados simplemente describiendo lo que quieren ver.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Características Principales
 
-## React Compiler
+- **Generación de Dibujos con IA**: Crea dibujos únicos al instante simplemente escribiendo una idea.
+- **Interfaz Amigable para Niños**: Un diseño colorido, intuitivo y fácil de usar.
+- **Galería de Creaciones**: Explora y descarga dibujos generados anteriormente.
+- **Sistema de Historial**: Accede rápidamente a tus creaciones más recientes.
+- **Descargas Listas para Imprimir**: Los dibujos están optimizados para ser impresos y coloreados en papel.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🚀 Tecnologías Utilizadas
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Este proyecto está construido con herramientas modernas para garantizar rapidez y eficiencia:
+
+- [React](https://reactjs.org/) - Librería de JavaScript para construir interfaces de usuario.
+- [Vite](https://vitejs.dev/) - Herramienta de construcción ultra rápida.
+- [Vanilla CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) - Estilos puros y elegantes.
+- [AI API Integration] - Conexión con modelos generativos para crear arte.
+
+---
+
+## 🛠️ Instalación y Uso Local
+
+Si deseas probar el proyecto en tu propia máquina, sigue estos pasos:
+
+1. **Clona el repositorio**:
+   ```bash
+   git clone https://github.com/caspecor/Colorea-AI.git
+   ```
+2. **Entra en el directorio**:
+   ```bash
+   cd Colorea-AI
+   ```
+3. **Instala las dependencias**:
+   ```bash
+   npm install
+   ```
+4. **Inicia el servidor de desarrollo**:
+   ```bash
+   npm run dev
+   ```
+5. Abre tu navegador en `http://localhost:5173/`.
+
+---
+
+## 🖌️ Filosofía del Diseño
+
+El diseño de **Colorea AI** se centra en la simplicidad y la alegría. Utilizamos una paleta de colores vibrantes y una tipografía clara para que la experiencia sea lúdica y accesible desde el primer segundo.
+
+---
+
+Desarrollado con ❤️ por Ancor.
