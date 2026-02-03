@@ -19,7 +19,7 @@ function Gallery({ image, isLoading }) {
                 </div>
             ) : (
                 <div className="gallery-image-wrapper">
-                    <img src={image} alt="Dibujo para colorear" className="gallery-image" />
+                    <img src={image} alt="Dibujo para colorear" className="gallery-image" referrerPolicy="no-referrer" />
                     <div className="print-footer">Colorea AI 🎨</div>
                     <div className="gallery-actions">
                         <button className="action-button print" onClick={() => window.print()}>🖨️ Imprimir</button>

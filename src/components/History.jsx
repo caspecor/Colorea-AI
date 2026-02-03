@@ -18,7 +18,7 @@ function History({ history, onSelect, onClear, onRemove }) {
                         className="history-item"
                         onClick={() => onSelect(item)}
                     >
-                        <img src={item.url} alt={`Dibujo ${index + 1}`} />
+                        <img src={item.url} alt={`Dibujo ${index + 1}`} referrerPolicy="no-referrer" />
                         <button
                             className="delete-item-btn"
                             onClick={(e) => {

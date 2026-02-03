@@ -113,36 +113,32 @@ function App() {
     return translated;
   };
 
-  const handleGenerate = (prompt) => {
+  const handleGenerate = async (prompt) => {
     setIsLoading(true);
     setGeneratedImage(null);
 
     const englishPrompt = translatePrompt(prompt);
 
-    // Use Pollinations.ai for free image generation
-    // Enhanced prompt for better coloring page results
-    // We put the prompt FIRST to give it more weight
     const enhancedPrompt = `${englishPrompt}, coloring book page, high resolution, fine black and white line art, clean lines, sharp details, white background, vector style, cute, for kids, no color, no shading, no grayscale, no realism, no overlapping lines`;
     const encodedPrompt = encodeURIComponent(enhancedPrompt);
     const randomSeed = Math.floor(Math.random() * 1000);
 
     const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
+    // Usamos un proxy para evitar bloqueos por CORS/Hotlinking en localhost
+    const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(imageUrl)}`;
 
-    // Pre-load image to avoid showing broken link while generating
-    const img = new Image();
-    img.src = imageUrl;
+    try {
+      // Simular un pequeño tiempo de "magia" para la UX
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-    img.onload = () => {
-      setGeneratedImage(imageUrl);
+      setGeneratedImage(proxyUrl);
+      addToHistory(proxyUrl, prompt);
+    } catch (error) {
+      console.error("Error generating image:", error);
+      alert("¡Vaya! Hubo un problema. Inténtalo de nuevo. 🎨");
+    } finally {
       setIsLoading(false);
-      addToHistory(imageUrl, prompt);
-    };
-
-    img.onerror = () => {
-      console.error("Error loading image");
-      setIsLoading(false);
-      alert("Hubo un problema creando la imagen. ¡Inténtalo de nuevo!");
-    };
+    }
   };
 
   return (
