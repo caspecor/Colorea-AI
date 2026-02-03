@@ -1,0 +1,87 @@
+.generator-container {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.generator-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.generator-label {
+    font-size: 1.8rem;
+    color: var(--color-primary);
+    font-weight: 700;
+    text-align: center;
+}
+
+.input-group {
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+}
+
+@media (min-width: 600px) {
+    .input-group {
+        flex-direction: row;
+    }
+}
+
+.generator-input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    font-size: 1.2rem;
+    border: 3px solid var(--color-secondary);
+    border-radius: var(--radius-full);
+    background: var(--color-background);
+    transition: all 0.3s ease;
+}
+
+.generator-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.2);
+    outline: none;
+}
+
+.generator-button {
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-white);
+    background: var(--color-primary);
+    border-radius: var(--radius-full);
+    border-bottom: 6px solid #E05555;
+    /* Darker shade of primary */
+    transition: all 0.1s ease;
+}
+
+.generator-button:active {
+    transform: translateY(4px);
+    border-bottom-width: 2px;
+}
+
+.generator-button:disabled {
+    background: #ccc;
+    border-bottom-color: #999;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.generator-button.loading {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
