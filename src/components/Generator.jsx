@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Generator.css';
 
-function Generator({ onGenerate, isLoading }) {
+function Generator({ onGenerate, isLoading, loadingStage }) {
     const [prompt, setPrompt] = useState('');
 
     const handleSubmit = (e) => {
@@ -32,7 +32,7 @@ function Generator({ onGenerate, isLoading }) {
                         className={`generator-button ${isLoading ? 'loading' : ''}`}
                         disabled={isLoading || !prompt.trim()}
                     >
-                        {isLoading ? '✨ Creando...' : '✨ ¡Magia!'}
+                        {isLoading ? loadingStage || '✨ Creando...' : '✨ ¡Magia!'}
                     </button>
                 </div>
             </form>

@@ -8,6 +8,7 @@ import History from './components/History'
 function App() {
   const [generatedImage, setGeneratedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState('');
   const [history, setHistory] = useState(() => {
     const saved = localStorage.getItem('colorea-history');
     return saved ? JSON.parse(saved) : [];
@@ -37,17 +38,38 @@ function App() {
     const lowerText = text.toLowerCase();
     let translated = text;
     const mappings = {
+      // Vehículos
       'nave': ' spaceship', 'espacial': ' space sci-fi', 'cohete': ' rocket',
-      'coche': ' car', 'auto': ' car', 'avión': ' airplane', 'barco': ' boat',
+      'coche': ' car', 'carro': ' car', 'auto': ' car', 'avión': ' airplane',
+      'avion': ' airplane', 'helicóptero': ' helicopter', 'barco': ' boat',
+      'tren': ' train', 'camión': ' truck', 'moto': ' motorcycle', 'bici': ' bicycle',
+
+      // Animales
       'gato': ' cat', 'gatito': ' kitten', 'perro': ' dog', 'perrito': ' puppy',
-      'pez': ' fish', 'ballena': ' whale', 'delfín': ' dolphin', 'tiburón': ' shark',
-      'león': ' lion', 'tigre': ' tiger', 'elefante': ' elephant', 'jirafa': ' giraffe',
+      'pez': ' fish', 'peces': ' fish', 'ballena': ' whale', 'delfín': ' dolphin',
+      'tiburón': ' shark', 'león': ' lion', 'tigre': ' tiger', 'elefante': ' elephant',
+      'jirafa': ' giraffe', 'mono': ' monkey', 'oso': ' bear', 'panda': ' panda',
       'caballo': ' horse', 'vaca': ' cow', 'oveja': ' sheep', 'conejo': ' rabbit',
-      'dragón': ' dragon', 'unicornio': ' unicorn', 'sirena': ' mermaid',
-      'hada': ' fairy', 'bruja': ' witch', 'mago': ' wizard', 'fantasma': ' ghost',
-      'monstruo': ' monster', 'robot': ' robot', 'superhéroe': ' superhero',
-      'princesa': ' princess', 'castillo': ' castle', 'flor': ' flower',
-      'árbol': ' tree', 'sol': ' sun', 'luna': ' moon', 'estrella': ' star'
+      'pájaro': ' bird', 'pajaro': ' bird', 'mariposa': ' butterfly', 'abeja': ' bee',
+
+      // Fantasía
+      'dragón': ' dragon', 'dragon': ' dragon', 'unicornio': ' unicorn', 'pegaso': ' pegasus',
+      'sirena': ' mermaid', 'hada': ' fairy', 'bruja': ' witch', 'mago': ' wizard',
+      'fantasma': ' ghost', 'monstruo': ' monster', 'robot': ' robot', 'alien': ' alien',
+      'superhéroe': ' superhero', 'superheroe': ' superhero', 'princesa': ' princess',
+      'príncipe': ' prince', 'principe': ' prince', 'rey': ' king', 'reina': ' queen',
+      'castillo': ' castle', 'dragón': ' dragon',
+
+      // Naturaleza
+      'flor': ' flower', 'rosa': ' rose', 'girasol': ' sunflower', 'árbol': ' tree',
+      'arbol': ' tree', 'bosque': ' forest', 'selva': ' jungle', 'montaña': ' mountain',
+      'sol': ' sun', 'luna': ' moon', 'estrella': ' star', 'nube': ' cloud',
+      'arcoíris': ' rainbow', 'arcoiris': ' rainbow', 'fuego': ' fire', 'playa': ' beach',
+
+      // Comida / Otros
+      'manzana': ' apple', 'plátano': ' banana', 'fresa': ' strawberry',
+      'helado': ' ice cream', 'pastel': ' cake', 'tarta': ' cake', 'pizza': ' pizza',
+      'hamburguesa': ' burger', 'pelota': ' ball', 'balón': ' ball', 'juguete': ' toy'
     };
     Object.keys(mappings).forEach(key => {
       if (lowerText.includes(key)) translated += mappings[key];
@@ -59,6 +81,7 @@ function App() {
 
   const handleGenerate = async (prompt) => {
     setIsLoading(true);
+    setLoadingStage('Conectando con el servidor principal...');
     setGeneratedImage(null);
 
     const englishPrompt = translatePrompt(prompt);
@@ -99,6 +122,10 @@ function App() {
 
       const strategy = strategies[index];
       console.log(`Intentando estrategia ${index + 1}: ${strategy.name}...`);
+
+      if (index > 0) {
+        setLoadingStage(`Reintentando... (Buscando servidor alternativo ${index})`);
+      }
 
       try {
         let imageUrlToLoad;
@@ -155,7 +182,7 @@ function App() {
 
       <div className={`content-wrapper ${history.length === 0 ? 'centered' : ''}`}>
         <main className="app-main">
-          <Generator onGenerate={handleGenerate} isLoading={isLoading} />
+          <Generator onGenerate={handleGenerate} isLoading={isLoading} loadingStage={loadingStage} />
           <Gallery image={generatedImage} isLoading={isLoading} />
         </main>
 
