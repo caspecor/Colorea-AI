@@ -58,7 +58,7 @@ function App() {
       'fantasma': ' ghost', 'monstruo': ' monster', 'robot': ' robot', 'alien': ' alien',
       'superhéroe': ' superhero', 'superheroe': ' superhero', 'princesa': ' princess',
       'príncipe': ' prince', 'principe': ' prince', 'rey': ' king', 'reina': ' queen',
-      'castillo': ' castle', 'dragón': ' dragon',
+      'castillo': ' castle',
 
       // Naturaleza
       'flor': ' flower', 'rosa': ' rose', 'girasol': ' sunflower', 'árbol': ' tree',
@@ -77,99 +77,119 @@ function App() {
     return translated;
   };
 
-  // --- LOGICA DE GENERACIÓN ROBUSTA (DAISY CHAIN) ---
-
   const handleGenerate = async (prompt) => {
     setIsLoading(true);
     setLoadingStage('Conectando con el servidor principal...');
     setGeneratedImage(null);
 
     const englishPrompt = translatePrompt(prompt);
-
-    // Prompts base por estilo
     const basePrompt = `${englishPrompt}, coloring book page, line art, black and white, clean lines, white background, no shading, minimal detail, cute, for kids`;
     const encodedPrompt = encodeURIComponent(basePrompt);
     const randomSeed = Math.floor(Math.random() * 1000);
     const API_KEY = "pk_cMYlf55YuDABkZZY";
 
-    // Definimos las estrategias en orden de prioridad
     const strategies = [
       {
-        name: "Pollinations Turbo (Primary)",
+        name: "Pollinations Turbo (Con Clave)",
         type: "direct",
         url: `https://image.pollinations.ai/prompt/${encodedPrompt}?model=turbo&seed=${randomSeed}&width=1024&height=1024&nologo=true&key=${API_KEY}`
       },
       {
-        name: "Pollinations Flux (Secondary)",
+        name: "Pollinations Turbo (Sin Clave)",
+        type: "direct",
+        url: `https://image.pollinations.ai/prompt/${encodedPrompt}?model=turbo&seed=${randomSeed}&width=1024&height=1024&nologo=true`
+      },
+      {
+        name: "Pollinations Flux (Calidad)",
         type: "direct",
         url: `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&seed=${randomSeed}&width=1024&height=1024&nologo=true&key=${API_KEY}`
       },
       {
-        name: "Hercai (Backup)",
+        name: "Hercai (Backup A)",
         type: "async_json",
-        // Usamos corsproxy para acceder a Hercai desde el navegador
         endpoint: `https://corsproxy.io/?${encodeURIComponent(`https://hercai.onrender.com/v3/text2image?prompt=${encodedPrompt}`)}`
+      },
+      {
+        name: "Hercai (Backup B)",
+        type: "async_json",
+        endpoint: `https://api.allorigins.win/get?url=${encodeURIComponent(`https://hercai.onrender.com/v3/text2image?prompt=${encodedPrompt}`)}`
       }
     ];
 
-    // Función recursiva para probar estrategias una a una
     const tryStrategy = async (index) => {
       if (index >= strategies.length) {
         setIsLoading(false);
-        alert("¡Lo siento! Todos los servidores de dibujo están durmiendo ahora mismo. Inténtalo en 5 minutos. 😴");
+        setLoadingStage('');
+        alert("¡Lo siento muchísimo! Todos los servidores de IA están colapsados. Inténtalo de nuevo en un minuto. 😿");
         return;
       }
 
       const strategy = strategies[index];
-      console.log(`Intentando estrategia ${index + 1}: ${strategy.name}...`);
+      setLoadingStage(index === 0 ? 'Conectando...' : `Reintentando... (vía ${strategy.name})`);
+      console.log(`[ColoreaAI] Intentando: ${strategy.name}`);
 
-      if (index > 0) {
-        setLoadingStage(`Reintentando... (Buscando servidor alternativo ${index})`);
-      }
+      let timeoutId;
+      let alreadyMovedOn = false;
+
+      const next = () => {
+        if (!alreadyMovedOn) {
+          alreadyMovedOn = true;
+          clearTimeout(timeoutId);
+          tryStrategy(index + 1);
+        }
+      };
+
+      // Tiempo máximo de espera por servidor: 15 segundos
+      timeoutId = setTimeout(() => {
+        console.warn(`[ColoreaAI] Timeout en ${strategy.name}.`);
+        next();
+      }, 15000);
 
       try {
         let imageUrlToLoad;
 
         if (strategy.type === "async_json") {
-          // Caso especial para Hercai que requiere Fetch primero
           const response = await fetch(strategy.endpoint);
-          const data = await response.json();
+          const rawData = await response.json();
+          // Manejo especial para AllOrigins que envuelve el JSON original en una propiedad 'contents'
+          const data = strategy.name.includes("AllOrigins") ? JSON.parse(rawData.contents) : rawData;
+
           if (data && data.url) {
             imageUrlToLoad = data.url;
           } else {
-            throw new Error("No URL in JSON response");
+            throw new Error("Respuesta inválida");
           }
         } else {
-          // Caso Directo (Pollinations)
           imageUrlToLoad = strategy.url;
         }
 
-        // Intentamos cargar la imagen "físicamente"
         const img = new Image();
         img.referrerPolicy = "no-referrer";
 
         img.onload = () => {
-          console.log(`¡Éxito con ${strategy.name}!`);
-          setGeneratedImage(imageUrlToLoad);
-          addToHistory(imageUrlToLoad, prompt);
-          setIsLoading(false);
+          if (!alreadyMovedOn) {
+            clearTimeout(timeoutId);
+            console.log(`[ColoreaAI] Éxito con ${strategy.name}`);
+            setGeneratedImage(imageUrlToLoad);
+            addToHistory(imageUrlToLoad, prompt);
+            setIsLoading(false);
+            setLoadingStage('');
+          }
         };
 
-        img.onerror = (err) => {
-          console.warn(`Fallo en ${strategy.name}. Pasando al siguiente...`);
-          // Si falla, llamamos recursivamente a la siguiente estrategia
-          tryStrategy(index + 1);
+        img.onerror = () => {
+          console.warn(`[ColoreaAI] Fallo de carga en ${strategy.name}`);
+          next();
         };
 
         img.src = imageUrlToLoad;
 
       } catch (error) {
-        console.warn(`Error técnico en ${strategy.name}:`, error);
-        tryStrategy(index + 1);
+        console.error(`[ColoreaAI] Error en ${strategy.name}:`, error);
+        next();
       }
     };
 
-    // Iniciamos la cadena
     tryStrategy(0);
   };
 
