@@ -119,76 +119,83 @@ function App() {
 
     const englishPrompt = translatePrompt(prompt);
 
-    // Configuración de estrategias de generación
+    // Configuración
     const enhancedPrompt = `${englishPrompt}, coloring book page, high resolution, fine black and white line art, clean lines, sharp details, white background, vector style, cute, for kids, no color, no shading, no grayscale, no realism, no overlapping lines`;
     const encodedPrompt = encodeURIComponent(enhancedPrompt);
     const randomSeed = Math.floor(Math.random() * 1000);
-    const API_KEY = "pk_cMYlf55YuDABkZZY";
+    const API_KEY = "pk_cMYlf55YuDABkZZY"; // Clave proporcionada por el usuario
 
-    // Listado de estrategias (Priorizamos DIRECTO con API key porque es lo más fiable)
-    const strategies = [
-      {
-        name: "Pollinations Direct (con API Key)",
-        id: "pollinations-direct",
-        url: `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=1024&height=1024&nologo=true&key=${API_KEY}`
-      },
-      {
-        name: "Pollinations Optimized (wsrv.nl)",
-        id: "pollinations-wsrv",
-        url: `https://wsrv.nl/?url=${encodeURIComponent(`https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=1024&height=1024&nologo=true&key=${API_KEY}`)}&output=jpg`
-      },
-      {
-        name: "Hercai Backup",
-        id: "hercai",
-        isAsync: true,
-        fetchUrl: `https://corsproxy.io/?${encodeURIComponent(`https://hercai.onrender.com/v3/text2image?prompt=${encodedPrompt}`)}`
-      }
-    ];
+    // URL base (sin clave en query param, usaremos Header)
+    const baseUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
 
-    let success = false;
+    console.log("Iniciando generación con Auth...");
 
-    for (const strategy of strategies) {
-      if (success) break;
-      console.log(`Intentando estrategia: ${strategy.name}`);
-
-      try {
-        let imageUrlToUse = strategy.url;
-
-        if (strategy.isAsync) {
-          const response = await fetch(strategy.fetchUrl);
-          if (!response.ok) throw new Error("Async fetch failed");
-          const data = await response.json();
-          if (data && data.url) {
-            imageUrlToUse = data.url;
-          } else {
-            throw new Error("No URL in response");
-          }
+    try {
+      // INTENTO 1: Fetch Directo con Autenticación (Bearer Token)
+      // Esto es lo más robusto y profesional.
+      const response = await fetch(baseUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          // 'User-Agent': 'ColoreaAI/1.0' // Opcional, a veces ayuda
         }
+      });
 
-        await new Promise((resolve, reject) => {
-          const img = new Image();
-          img.referrerPolicy = "no-referrer";
-          img.onload = () => resolve(imageUrlToUse);
-          img.onerror = () => reject(new Error(`Failed to load image from ${imageUrlToUse}`));
-          img.src = imageUrlToUse;
-          setTimeout(() => reject(new Error("Timeout loading image")), 20000);
-        });
+      console.log("Estado respuesta Pollinations:", response.status);
 
-        setGeneratedImage(imageUrlToUse);
-        addToHistory(imageUrlToUse, prompt);
-        success = true;
-        console.log(`Éxito con estrategia: ${strategy.name}`);
-
-      } catch (error) {
-        console.warn(`Fallo en estrategia ${strategy.name}:`, error.message);
+      if (!response.ok) {
+        // Manejo de errores específicos
+        if (response.status === 401 || response.status === 403) throw new Error("AUTH_ERROR: Clave API inválida o bloqueada.");
+        if (response.status === 429) throw new Error("LIMIT_ERROR: Has excedido el límite de uso.");
+        if (response.status >= 500) throw new Error("SERVER_ERROR: Los servidores de Pollinations tienen problemas.");
+        throw new Error(`HTTP_ERROR: ${response.status}`);
       }
-    }
 
-    if (!success) {
-      alert("¡Vaya! Los duendes de Internet están dormidos hoy. Inténtalo de nuevo en unos minutos. 🎨");
-    }
+      // Si todo va bien, obtenemos la imagen como Blob
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
 
-    setIsLoading(false);
+      setGeneratedImage(objectUrl);
+      addToHistory(objectUrl, prompt);
+      console.log("¡Éxito! Imagen generada y procesada.");
+
+    } catch (error) {
+      console.error("Fallo detallado:", error);
+
+      let errorMessage = "¡Vaya! Los duendes de Internet están dormidos. 🎨";
+
+      if (error.message.includes("AUTH_ERROR")) errorMessage = "Error de autorización con la IA. Revisa la API Key.";
+      if (error.message.includes("LIMIT_ERROR")) errorMessage = "Has creado muchos dibujos hoy. ¡Descansa un poco!";
+      if (error.message.includes("SERVER_ERROR")) errorMessage = "El cerebro de la IA está mareado (Error 500). Intenta en 5 min.";
+
+      // INTENTO 2: Fallback a Proxy (wsrv.nl) si falla la conexión directa
+      // Solo intentamos esto si NO es un error de Auth/Límite (porque fallaría igual)
+      if (!error.message.includes("AUTH_ERROR") && !error.message.includes("LIMIT_ERROR")) {
+        try {
+          console.log("Intentando fallback vía wsrv.nl...");
+          // En fallback ponemos la key en la URL porque wsrv no pasa headers personalizados
+          const fallbackUrl = `https://wsrv.nl/?url=${encodeURIComponent(baseUrl + `&key=${API_KEY}`)}&output=jpg`;
+
+          await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = fallbackUrl;
+          });
+
+          setGeneratedImage(fallbackUrl);
+          addToHistory(fallbackUrl, prompt);
+          console.log("¡Salvado por el backup!");
+          return; // Salimos si el backup funciona
+        } catch (backupError) {
+          console.warn("El backup también falló.");
+        }
+      }
+
+      alert(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
