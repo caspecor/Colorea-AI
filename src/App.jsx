@@ -113,89 +113,45 @@ function App() {
     return translated;
   };
 
-  const handleGenerate = async (prompt) => {
+  const handleGenerate = (prompt) => {
     setIsLoading(true);
     setGeneratedImage(null);
 
     const englishPrompt = translatePrompt(prompt);
 
-    // Configuración
-    const enhancedPrompt = `${englishPrompt}, coloring book page, high resolution, fine black and white line art, clean lines, sharp details, white background, vector style, cute, for kids, no color, no shading, no grayscale, no realism, no overlapping lines`;
+    // Configuración para el modelo FLUX (Especializado, requiere prompts más limpios)
+    // Hemos simplificado el prompt para darle más libertad creativa al modelo mejorado
+    const enhancedPrompt = `${englishPrompt}, coloring book page, line art, black and white, clean lines, white background, no shading, minimal detail, cute, for kids`;
     const encodedPrompt = encodeURIComponent(enhancedPrompt);
     const randomSeed = Math.floor(Math.random() * 1000);
-    const API_KEY = "pk_cMYlf55YuDABkZZY"; // Clave proporcionada por el usuario
+    const API_KEY = "pk_cMYlf55YuDABkZZY";
 
-    // URL base (sin clave en query param, usaremos Header)
-    const baseUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
+    // ESTRATEGIA NUCLEAR: URL SIMPLE + MODELO FLUX
+    // Usamos model=flux, width/height standard, y pasamos la KEY en la URL.
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&seed=${randomSeed}&width=1024&height=1024&nologo=true&key=${API_KEY}`;
 
-    console.log("Iniciando generación con Auth...");
+    console.log("Generando con FLUX:", imageUrl);
 
-    try {
-      // INTENTO 1: Fetch Directo con Autenticación (Bearer Token)
-      // Esto es lo más robusto y profesional.
-      const response = await fetch(baseUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          // 'User-Agent': 'ColoreaAI/1.0' // Opcional, a veces ayuda
-        }
-      });
+    // Precarga "Native" (Sin Fetch, solo navegador)
+    const img = new Image();
+    // 'no-referrer' suele ayudar a evitar bloqueos de host
+    img.referrerPolicy = "no-referrer";
 
-      console.log("Estado respuesta Pollinations:", response.status);
-
-      if (!response.ok) {
-        // Manejo de errores específicos
-        if (response.status === 401 || response.status === 403) throw new Error("AUTH_ERROR: Clave API inválida o bloqueada.");
-        if (response.status === 429) throw new Error("LIMIT_ERROR: Has excedido el límite de uso.");
-        if (response.status >= 500) throw new Error("SERVER_ERROR: Los servidores de Pollinations tienen problemas.");
-        throw new Error(`HTTP_ERROR: ${response.status}`);
-      }
-
-      // Si todo va bien, obtenemos la imagen como Blob
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-
-      setGeneratedImage(objectUrl);
-      addToHistory(objectUrl, prompt);
-      console.log("¡Éxito! Imagen generada y procesada.");
-
-    } catch (error) {
-      console.error("Fallo detallado:", error);
-
-      let errorMessage = "¡Vaya! Los duendes de Internet están dormidos. 🎨";
-
-      if (error.message.includes("AUTH_ERROR")) errorMessage = "Error de autorización con la IA. Revisa la API Key.";
-      if (error.message.includes("LIMIT_ERROR")) errorMessage = "Has creado muchos dibujos hoy. ¡Descansa un poco!";
-      if (error.message.includes("SERVER_ERROR")) errorMessage = "El cerebro de la IA está mareado (Error 500). Intenta en 5 min.";
-
-      // INTENTO 2: Fallback a Proxy (wsrv.nl) si falla la conexión directa
-      // Solo intentamos esto si NO es un error de Auth/Límite (porque fallaría igual)
-      if (!error.message.includes("AUTH_ERROR") && !error.message.includes("LIMIT_ERROR")) {
-        try {
-          console.log("Intentando fallback vía wsrv.nl...");
-          // En fallback ponemos la key en la URL porque wsrv no pasa headers personalizados
-          const fallbackUrl = `https://wsrv.nl/?url=${encodeURIComponent(baseUrl + `&key=${API_KEY}`)}&output=jpg`;
-
-          await new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = fallbackUrl;
-          });
-
-          setGeneratedImage(fallbackUrl);
-          addToHistory(fallbackUrl, prompt);
-          console.log("¡Salvado por el backup!");
-          return; // Salimos si el backup funciona
-        } catch (backupError) {
-          console.warn("El backup también falló.");
-        }
-      }
-
-      alert(errorMessage);
-    } finally {
+    img.onload = () => {
+      console.log("¡Imagen FLUX cargada correctamente!");
+      setGeneratedImage(imageUrl);
+      addToHistory(imageUrl, prompt);
       setIsLoading(false);
-    }
+    };
+
+    img.onerror = (err) => {
+      console.error("Error cargando imagen:", err);
+      alert("Lo sentimos, no se pudo generar el dibujo. Inténtalo de nuevo.");
+      setIsLoading(false);
+    };
+
+    // Al asignar el src, el navegador inicia la carga inmediatamente
+    img.src = imageUrl;
   };
 
   return (
