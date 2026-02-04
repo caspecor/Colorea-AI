@@ -119,18 +119,17 @@ function App() {
 
     const englishPrompt = translatePrompt(prompt);
 
-    // Configuración para el modelo FLUX (Especializado, requiere prompts más limpios)
-    // Hemos simplificado el prompt para darle más libertad creativa al modelo mejorado
+    // Configuración para el modelo TURBO (Más rápido y estable)
     const enhancedPrompt = `${englishPrompt}, coloring book page, line art, black and white, clean lines, white background, no shading, minimal detail, cute, for kids`;
     const encodedPrompt = encodeURIComponent(enhancedPrompt);
     const randomSeed = Math.floor(Math.random() * 1000);
     const API_KEY = "pk_cMYlf55YuDABkZZY";
 
-    // ESTRATEGIA NUCLEAR: URL SIMPLE + MODELO FLUX
-    // Usamos model=flux, width/height standard, y pasamos la KEY en la URL.
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&seed=${randomSeed}&width=1024&height=1024&nologo=true&key=${API_KEY}`;
+    // ESTRATEGIA NUCLEAR: URL SIMPLE + MODELO TURBO (Súper estable)
+    // Usamos model=turbo para evitar errores 502 del servidor
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=turbo&seed=${randomSeed}&width=1024&height=1024&nologo=true&key=${API_KEY}`;
 
-    console.log("Generando con FLUX:", imageUrl);
+    console.log("Generando con TURBO:", imageUrl);
 
     // Precarga "Native" (Sin Fetch, solo navegador)
     const img = new Image();
@@ -138,7 +137,7 @@ function App() {
     img.referrerPolicy = "no-referrer";
 
     img.onload = () => {
-      console.log("¡Imagen FLUX cargada correctamente!");
+      console.log("¡Imagen TURBO cargada correctamente!");
       setGeneratedImage(imageUrl);
       addToHistory(imageUrl, prompt);
       setIsLoading(false);
